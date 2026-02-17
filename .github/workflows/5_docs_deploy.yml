@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python-version: ['3.7']
+        python-version: ['3.10']  # Changed from 3.7 to 3.10
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python-version }}
@@ -19,25 +19,43 @@ jobs:
 
     steps:
     - name: Check out code repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4  # Updated to v4
       with:
-        path:  github-actions-cicd-example
+        path: github-actions-cicd-example
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Check if docs repository exists
+      id: check_repo
+      run: |
+        if curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/parthjadhao01/parthjadhao01.github.io" | grep -q "Not Found"; then
+          echo "repo_exists=false" >> $GITHUB_OUTPUT
+        else
+          echo "repo_exists=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create docs repository if it doesn't exist
+      if: steps.check_repo.outputs.repo_exists == 'false'
+      run: |
+        curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -d '{"name":"parthjadhao01.github.io", "auto_init":true}' \
+          https://api.github.com/user/repos
 
     - name: Check out docs repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         repository: parthjadhao01/parthjadhao01.github.io
         path: parthjadhao01.github.io
-        token: ${{secrets.PUSH_TOKEN}}
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5  # Updated to v5
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
       run: |
-        cd  github-actions-cicd-example
+        cd github-actions-cicd-example
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements_docs.txt
@@ -47,14 +65,17 @@ jobs:
         cd github-actions-cicd-example/docs
         make html
 
-    - name: Push docs
+    - name: Push docs to GitHub Pages
       run: |
-        cp -RT  github-actions-cicd-example/docs/build/html parthjadhao01.github.io/docs/github-actions-cicd-example
+        # Create directory if it doesn't exist
+        mkdir -p parthjadhao01.github.io/docs/github-actions-cicd-example
+        
+        # Copy built docs
+        cp -RT github-actions-cicd-example/docs/build/html parthjadhao01.github.io/docs/github-actions-cicd-example/
+        
+        # Commit and push
         cd parthjadhao01.github.io
         git config --local user.name "github-actions[bot]"
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git add -A
-        git diff-index --quiet HEAD || (git commit -m "Documentation update" && git push https://$USERNAME:$REPO_KEY@github.com/parthjadhao01/parthjadhao01.github.io.git)
-      env:
-        REPO_KEY: ${{secrets.PUSH_TOKEN}}
-        USERNAME: github-actions[bot]
+        git diff-index --quiet HEAD || (git commit -m "Update documentation from github-actions-cicd-example" && git push)
