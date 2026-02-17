@@ -26,8 +26,8 @@ jobs:
     - name: Check out docs repository
       uses: actions/checkout@v2
       with:
-        repository: alexmalins/alexmalins.github.io
-        path: alexmalins.github.io
+        repository: parthjadhao01/parthjadhao01.github.io
+        path: parthjadhao01.github.io
         token: ${{secrets.PUSH_TOKEN}}
 
     - name: Set up Python ${{ matrix.python-version }}
@@ -49,12 +49,12 @@ jobs:
 
     - name: Push docs
       run: |
-        cp -RT  github-actions-cicd-example/docs/build/html alexmalins.github.io/docs/github-actions-cicd-example
-        cd alexmalins.github.io
+        cp -RT  github-actions-cicd-example/docs/build/html parthjadhao01.github.io/docs/github-actions-cicd-example
+        cd parthjadhao01.github.io
         git config --local user.name "github-actions[bot]"
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git add -A
-        git diff-index --quiet HEAD || (git commit -m "Documentation update" && git push https://$USERNAME:$REPO_KEY@github.com/alexmalins/alexmalins.github.io.git)
+        git diff-index --quiet HEAD || (git commit -m "Documentation update" && git push https://$USERNAME:$REPO_KEY@github.com/parthjadhao01/parthjadhao01.github.io.git)
       env:
         REPO_KEY: ${{secrets.PUSH_TOKEN}}
         USERNAME: github-actions[bot]
